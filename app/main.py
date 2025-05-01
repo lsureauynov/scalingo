@@ -22,7 +22,7 @@ def get_users():
         host=dbc.hostname
     )
     cursor = conn.cursor()
-    sql_select_Query = "select * from users"
+    sql_select_Query = "select * from user"
     cursor.execute(sql_select_Query)
     records = cursor.fetchall()
     return {'users': records}
