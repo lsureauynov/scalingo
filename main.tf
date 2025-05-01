@@ -1,118 +1,38 @@
 terraform {
-    required_providers {
-        docker = {
-            source  = "kreuzwerker/docker"
-            version = "3.0.2"
-        }
+  required_providers {
+    scalingo = {
+      source  = "scalingo/scalingo"
+      version = "2.3.0"
     }
-}
-
-provider "docker" {
+    ad = {
+      source  = "hashicorp/ad"
+      version = "0.5.0"
     }
-
-resource "docker_image" "mysql" {
-    name = "mysql:8.0.31"
-    keep_locally = true
+  }
 }
 
-resource "docker_image" "python" {
-    name = "python:3.11.4"
-    keep_locally = true
-    build {
-        context = "./python"
-    }
+provider "scalingo" {
+  api_token = "tk-us-tpUDHklBlvTQ0eBK20oyt2x9Q3AbG1MRn3E9qZoY9OtqU4XU"
+  region = "osc-fr1"
 }
 
-variable "MYSQL_DATABASE" {
-    description = "The name of the database to create"
-    type        = string
-    default     = "ynov_cis"
+resource "scalingo_app" "python_api" {
+  name = "python-api"
+  environment = {
+    PROJECT_DIR = "app"
+    BUILDPACK_URL = "https://github.com/Scalingo/python-buildpack"
+  }
 }
 
-variable "MYSQL_PASSWORD" {
-    description = "The password for the MySQL root user"
-    type        = string
-    default     = "root"
+resource "scalingo_addon" "db" {
+  provider_id = "mysql"
+  plan = "mysql-starter-512"
+  app = "${scalingo_app.python_api.id}"
 }
 
-variable "MYSQL_ROOT_PASSWORD" {
-    description = "The password for the MySQL root user"
-    type        = string
-    default     = "root"
+resource "scalingo_container_type" "web" {
+  app = scalingo_app.python_api.name
+  name = "web"
+  amount = 1
+  size = "S"
 }
-
-variable "MYSQL_ROOT_USER" {
-    description = "The name of the MySQL root user"
-    type        = string
-    default     = "root"
-}
-
-variable "MYSQL_HOST" {
-    description = "The host of the MySQL server"
-    type        = string
-    default     = "mysql"
-}
-
-variable "MYSQL_PORT" {
-    description = "The port of the MySQL server"
-    type        = number
-    default     = 3306
-}
-variable "MYSQL_USER" {
-    description = "The name of the MySQL user"
-    type        = string
-    default     = "root"
-}
-
-
-resource "docker_network" "ynov_cis" {
-    name = "ynov_cis"
-}
-
-resource "docker_container" "mysql" {
-    name  = "mysql"
-    image = docker_image.mysql.image_id
-    networks_advanced {name = docker_network.ynov_cis.name}
-    volumes {
-        host_path = abspath("${path.module}/mysql")
-        container_path = "/docker-entrypoint-initdb.d"
-    }
-    env = [
-      "MYSQL_DATABASE=${var.MYSQL_DATABASE}",
-      "MYSQL_PASSWORD=${var.MYSQL_PASSWORD}",
-      "MYSQL_ROOT_PASSWORD=${var.MYSQL_ROOT_PASSWORD}",
-      "MYSQL_ROOT_USER=${var.MYSQL_ROOT_USER}",
-    ]
-    ports {
-        internal = 3306
-        external = 3306
-    }
-    healthcheck {
-        test = ["mysqladmin", "ping", "-h", "localhost"]
-    }
-}
-
-resource "docker_container" "python" {
-    name  = "python"
-    image = docker_image.python.image_id
-    networks_advanced {name = docker_network.ynov_cis.name}
-    ports {
-        internal = 8080
-        external = 8080
-    }
-    env = [
-        "MYSQL_HOST=${var.MYSQL_HOST}",
-        "MYSQL_PORT=${var.MYSQL_PORT}",
-        "MYSQL_USER=${var.MYSQL_USER}",
-        "MYSQL_PASSWORD=${var.MYSQL_PASSWORD}",
-        "MYSQL_ROOT_PASSWORD=${var.MYSQL_ROOT_PASSWORD}",
-        "MYSQL_DATABASE=${var.MYSQL_DATABASE}",
-    ]
-    volumes {
-        host_path      = abspath("${path.module}/app")
-        container_path = "/app"
-    }
-    depends_on = [docker_container.mysql]
-}
-
-

@@ -1,32 +1,35 @@
 import mysql.connector
 import os
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask
+from flask import render_template
+from urllib.parse import urlparse
 
-app = FastAPI()
-origins = ["*"]
+app = Flask(__name__)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-# Database connection
-@app.get("/users")
-async def get_users():
-    conn = mysql.connector.connect(
-        database=os.getenv("MYSQL_DATABASE"),
-        user=os.getenv("MYSQL_USER"),
-        password=os.getenv("MYSQL_ROOT_PASSWORD"),
-        host=os.getenv("MYSQL_HOST"),
-        port=3306
+@app.route("/")
+def hello():
+    return render_template('index.html')
+
+@app.route("/users")
+def get_users():
+    mysqlUrl = os.getenv("SCALINGO_MYSQL_URL")
+    dbc = urlparse(mysqlUrl)
+    conn= mysql.connector.connect(
+        database=dbc.path.lstrip('/'),
+        user=dbc.username,
+        password=dbc.password,
+        port=dbc.port,
+        host=dbc.hostname
     )
     cursor = conn.cursor()
-    sql_select_Query = "SELECT * FROM user"
+    sql_select_Query = "select * from users"
     cursor.execute(sql_select_Query)
-
     records = cursor.fetchall()
-    print("Total number of rows in users is: ", cursor.rowcount)
-    return {"users": records}
+    return {'users': records}
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+
+
