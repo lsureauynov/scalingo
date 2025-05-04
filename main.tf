@@ -11,8 +11,13 @@ terraform {
   }
 }
 
+variable API_TOKEN {
+  description = "API token for Scalingo"
+  type        = string
+}
+
 provider "scalingo" {
-  api_token = "tk-us-tpUDHklBlvTQ0eBK20oyt2x9Q3AbG1MRn3E9qZoY9OtqU4XU"
+  api_token = "${var.API_TOKEN}"
   region = "osc-fr1"
 }
 
