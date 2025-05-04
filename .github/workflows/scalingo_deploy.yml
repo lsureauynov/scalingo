@@ -8,9 +8,15 @@ on:
     types: [trigger-deploy]
 
 jobs:
-  deploy:
-    needs: terraform
+  setup:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: setup
 
     steps:
       - name: Checkout code
