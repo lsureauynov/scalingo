@@ -1,23 +1,25 @@
 name: Deploy to Scalingo
 
 on:
-  push:
-    branches:
-      - prod
   repository_dispatch:
     types: [trigger-deploy]
 
 jobs:
   deploy:
-    needs: terraform
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SCALINGO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan ssh.osc-fr1.scalingo.com >> ~/.ssh/known_hosts
+
       - name: Deploy to Scalingo
-        uses: kolok/deploy-to-scalingo@v1
-        with:
-          scalingo_token: ${{ secrets.SCALINGO_TOKEN }}
-          app_name: "python-api"
+        run: |
+          git remote add scalingo git@ssh.osc-fr1.scalingo.com:python-api.git
+          git push scalingo HEAD:master
