@@ -15,6 +15,6 @@ jobs:
       - name: Deploy to Scalingo
         uses: kolok/deploy-to-scalingo@v1
         with:
-        scalingo_token: ${{ secrets.SCALINGO_TOKEN }}
-        app_name: python-api
+          scalingo_token: ${{ secrets.SCALINGO_TOKEN }}
+          app_name: python-api
 
