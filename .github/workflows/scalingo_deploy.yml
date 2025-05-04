@@ -8,28 +8,16 @@ on:
     types: [trigger-deploy]
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
   deploy:
+    needs: terraform
     runs-on: ubuntu-latest
-    needs: setup
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up SSH key for Scalingo
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_SCALINGO }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa ssh.osc-fr1.scalingo.com >> ~/.ssh/known_hosts
 
       - name: Deploy to Scalingo
         uses: kolok/deploy-to-scalingo@v1
         with:
           scalingo_token: ${{ secrets.SCALINGO_TOKEN }}
-          app_name: python-api
+          app_name: "python-api"
