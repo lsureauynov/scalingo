@@ -1,6 +1,9 @@
 name: deploy to scalingo
 
 on:
+  push:
+    branches:
+      - prod
   repository_dispatch:
     types: [trigger-deploy]
 
@@ -15,7 +18,7 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SCALINGO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_SCALINGO }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ssh.osc-fr1.scalingo.com >> ~/.ssh/known_hosts
 
