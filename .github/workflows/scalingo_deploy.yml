@@ -19,7 +19,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_SCALINGO }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan ssh.osc-fr1.scalingo.com >> ~/.ssh/known_hosts
+          ssh-agent bash -c 'ssh-add ~/.ssh/id_rsa; ssh-keyscan ssh.osc-fr1.scalingo.com >> ~/.ssh/known_hosts'
+          ssh -vT git@ssh.osc-fr1.scalingo.com
 
       - name: Display Git remotes
         run: git remote -v
