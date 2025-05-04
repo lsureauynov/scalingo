@@ -1,4 +1,4 @@
-name: Deploy to Scalingo
+name: deploy to scalingo
 
 on:
   repository_dispatch:
