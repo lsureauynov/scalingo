@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - prod
+  repository_dispatch:
+    types: [trigger-deploy]
 
 jobs:
   deploy:
