@@ -1,4 +1,4 @@
-name: Deploy to scalingo
+name: deploy to scalingo
 
 on:
   repository_dispatch:
@@ -10,24 +10,42 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
       - name: Setup SSH key
         run: |
+          # Crée le répertoire pour les clés SSH et le fichier de configuration
           mkdir -p ~/.ssh
+          
+          # Ajoute la clé privée à partir des secrets
           echo "${{ secrets.SSH_SCALINGO }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-add -D  # Clear any previous keys
-          ssh-add ~/.ssh/id_rsa  # Add the private key
-          ssh-add -l  # List added keys to verify
+          
+          # Crée ou modifie le fichier de configuration SSH
+          echo "Host ssh.osc-fr1.scalingo.com" > ~/.ssh/config
+          echo "  HostName ssh.osc-fr1.scalingo.com" >> ~/.ssh/config
+          echo "  User git" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/id_rsa" >> ~/.ssh/config
+          echo "  IdentitiesOnly yes" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          
+          # Ajoute la clé au SSH agent
+          ssh-add -D  # Supprime toutes les clés précédemment ajoutées
+          ssh-add ~/.ssh/id_rsa  # Ajoute la clé privée à l'agent SSH
+          
+          # Vérifie que la clé a bien été ajoutée
+          ssh-add -l  # Liste les clés actuellement ajoutées à l'agent SSH
+          
+          # Vérifie que l'hôte Scalingo est bien dans le fichier known_hosts
           ssh-keyscan ssh.osc-fr1.scalingo.com >> ~/.ssh/known_hosts
-
-      - name: Display Git remotes
-        run: git remote -v
 
       - name: Deploy to Scalingo
         run: |
+          # Ajoute le remote Scalingo avec la clé SSH
           git remote add scalingo git@ssh.osc-fr1.scalingo.com:python-api.git
+          
+          # Vérifie que la connexion SSH fonctionne
+          ssh -T git@ssh.osc-fr1.scalingo.com || exit 1
+          
+          # Pousse les changements vers Scalingo
           git push scalingo HEAD:master
